@@ -10,6 +10,7 @@
     "start": "cross-env NODE_ENV=development webpack-dev-server --mode development --open",
     "stats": "webpack --json > stats.json && webpack-bundle-analyzer stats.json"
   },
+  "browserslist": ">0.25%, not dead",
   "keywords": [
     "js",
     "webpack"

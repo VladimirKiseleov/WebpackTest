@@ -26,12 +26,54 @@ const optimization = () => {
 
 const filename = (ext) => (isDev ? `[name].${ext}` : `[name].[hash].${ext}`)
 
+const cssLoaders = (extra) => {
+  const loaders = [
+    {
+      loader: MiniCssExtractPlugin.loader,
+      options: {
+        publicPath: path.resolve(__dirname, 'dist'),
+        hmr: isDev,
+        reloadAll: true,
+      },
+    },
+    'css-loader',
+  ]
+  if (extra) {
+    loaders.push(extra)
+  }
+  return loaders
+}
+
+const babelOptions = (preset) => {
+  const opts = {
+    presets: ['@babel/preset-env'],
+    plugins: ['@babel/plugin-proposal-class-properties'],
+  }
+  if (preset) {
+    opts.presets.push(preset)
+  }
+  return opts
+}
+
+const jsLoaders = () => {
+  const loaders = [
+    {
+      loader: 'babel-loader',
+      options: babelOptions(),
+    },
+  ]
+  if (isDev) {
+    loaders.push('eslint-loader')
+  }
+  return loaders
+}
+
 module.exports = {
   context: path.resolve(__dirname, 'src'),
   mode: 'development',
   entry: {
-    main: './index.js',
-    analytics: './analytics.js',
+    main: ['@babel/polyfill', './index.jsx'],
+    analytics: './analytics.ts',
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -49,6 +91,7 @@ module.exports = {
     port: 4200,
     hot: isDev,
   },
+  devtool: isDev ? 'source-map' : '',
   plugins: [
     new HTMLWebpackPlugin({
       template: './index.html',
@@ -70,48 +113,37 @@ module.exports = {
   module: {
     rules: [
       {
+        test: /\.m?js$/,
+        exclude: /node_modules/,
+        use: jsLoaders(),
+      },
+      {
+        test: /\.ts$/,
+        exclude: /node_modules/,
+        loader: {
+          loader: 'babel-loader',
+          options: babelOptions('@babel/preset-typescript'),
+        },
+      },
+      {
+        test: /\.jsx$/,
+        exclude: /node_modules/,
+        loader: {
+          loader: 'babel-loader',
+          options: babelOptions('@babel/preset-react'),
+        },
+      },
+      {
         test: /\.css$/,
-        use: [
-          {
-            loader: MiniCssExtractPlugin.loader,
-            options: {
-              publicPath: path.resolve(__dirname, 'dist'),
-              hmr: isDev,
-              reloadAll: true,
-            },
-          },
-          'css-loader',
-        ],
+        use: cssLoaders(),
       },
       {
         test: /\.less$/,
-        use: [
-          {
-            loader: MiniCssExtractPlugin.loader,
-            options: {
-              publicPath: path.resolve(__dirname, 'dist'),
-              hmr: isDev,
-              reloadAll: true,
-            },
-          },
-          'css-loader',
-          'less-loader',
-        ],
+        use: cssLoaders('less-loader'),
       },
       {
         test: /\.s[ac]ss$/,
-        use: [
-          {
-            loader: MiniCssExtractPlugin.loader,
-            options: {
-              publicPath: path.resolve(__dirname, 'dist'),
-              hmr: isDev,
-              reloadAll: true,
-            },
-          },
-          'css-loader',
-          'sass-loader',
-        ],
+        use: cssLoaders('sass-loader'),
       },
       {
         test: /\.(png|jpg|svg|gif)$/,
